@@ -9,7 +9,7 @@ export default function FacultyDashboard() {
   const [activeSection, setActiveSection] = useState<'dashboard' | 'attendance' | 'marks' | 'students'>('dashboard');
 
   const academicYears = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
-  const sections = ['Section A', 'Section B'];
+  const sections = ['Section A', 'Section B', 'Section C'];
   const periods = [1, 2, 3, 4, 5, 6];
 
   // Mock class schedule
