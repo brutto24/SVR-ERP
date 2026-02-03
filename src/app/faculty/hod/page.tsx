@@ -23,7 +23,7 @@ export default function HODDashboard() {
 
   // Mock faculty list
   const facultyList = [
-    { id: 'FAC001', name: 'Dr. Rajesh Kumar', role: 'HOD', subjects: ['All'], status: 'Active' },
+    { id: 'FAC001', name: 'Dr. M. Subba Reddy', role: 'HOD', subjects: ['All'], status: 'Active' },
     { id: 'FAC002', name: 'Prof. Sarah Devi', role: 'Faculty', subjects: ['AI', 'ML', 'Deep Learning'], status: 'Active' },
     { id: 'FAC003', name: 'Dr. Arun Kumar', role: 'Faculty', subjects: ['Data Structures', 'Algorithms'], status: 'Active' },
     { id: 'FAC004', name: 'Prof. Priya Sharma', role: 'Faculty', subjects: ['DBMS', 'Web Technologies'], status: 'On Leave' },

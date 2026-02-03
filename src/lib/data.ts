@@ -82,7 +82,7 @@ export const mockStudents: Student[] = [
 export const mockFaculty: Faculty[] = [
   {
     id: 'FAC001',
-    name: 'Dr. Rajesh Kumar',
+    name: 'Dr. M. Subba Reddy',
     role: 'HOD',
     subjects: ['All']
   },
