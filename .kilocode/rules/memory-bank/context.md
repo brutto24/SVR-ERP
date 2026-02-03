@@ -83,3 +83,5 @@ A comprehensive digital student management system for SVR Engineering College - 
 | 2024-02-03 | Added attendance and marks pages |
 | 2024-02-03 | Created faculty and HOD dashboards |
 | 2024-02-03 | Added Drizzle ORM database with full schema |
+| 2024-02-03 | Update HOD name to Dr. M. Subba Reddy |
+| 2024-02-03 | Separate sections A,B,C in attendance with checkboxes and total/present classes |
