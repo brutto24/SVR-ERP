@@ -101,6 +101,15 @@ export default function LoginPage() {
                 />
               </div>
 
+              {/* Demo Credentials Info */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-4">
+                <p className="text-sm font-medium text-amber-800 mb-1">📌 Demo Credentials:</p>
+                <p className="text-xs text-amber-700">
+                  <strong>Student:</strong> ID: 23A1AI01 | Any password<br />
+                  <strong>Faculty:</strong> ID: FAC001 or FAC002 | Any password
+                </p>
+              </div>
+
               <button
                 type="submit"
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors"
