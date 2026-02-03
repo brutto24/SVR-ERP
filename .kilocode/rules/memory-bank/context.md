@@ -1,10 +1,10 @@
-# Active Context: Next.js Starter Template
+# Active Context: AI Department Student Management System
 
 ## Current State
 
-**Template Status**: ✅ Ready for development
+**Project Status**: ✅ Under Development
 
-The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. It's ready for AI-assisted expansion to build any type of application.
+A comprehensive digital student management system for SVR Engineering College - AI Department. Features role-based login (Student, Faculty, HOD) with attendance tracking, marks management, and academic data visualization.
 
 ## Recently Completed
 
@@ -12,76 +12,74 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] TypeScript configuration with strict mode
 - [x] Tailwind CSS 4 integration
 - [x] ESLint configuration
-- [x] Memory bank documentation
-- [x] Recipe system for common features
+- [x] Login page with role selection (Student/Faculty/HOD)
+- [x] Student dashboard with profile, class info, and year selection
+- [x] Student attendance and marks overview pages
+- [x] Detailed MID-1, MID-2, SEM marks pages
+- [x] Faculty attendance management module
+- [x] Faculty marks entry module
+- [x] HOD admin dashboard with monitoring and reports
+- [x] Database setup with Drizzle ORM + SQLite
+- [x] Database schema for users, students, faculty, subjects, attendance, marks
 
 ## Current Structure
 
 | File/Directory | Purpose | Status |
 |----------------|---------|--------|
-| `src/app/page.tsx` | Home page | ✅ Ready |
-| `src/app/layout.tsx` | Root layout | ✅ Ready |
-| `src/app/globals.css` | Global styles | ✅ Ready |
-| `.kilocode/` | AI context & recipes | ✅ Ready |
+| `src/app/login/` | Login page with role selection | ✅ Complete |
+| `src/app/student/` | Student dashboard and year pages | ✅ Complete |
+| `src/app/student/[year]/` | Academic year selection | ✅ Complete |
+| `src/app/student/[year]/marks/` | Marks detail pages | ✅ Complete |
+| `src/app/faculty/` | Faculty dashboard | ✅ Complete |
+| `src/app/faculty/hod/` | HOD admin dashboard | ✅ Complete |
+| `src/db/schema.ts` | Database schema | ✅ Complete |
+| `src/db/index.ts` | Database client | ✅ Complete |
+| `src/lib/data.ts` | Mock data and types | ✅ Complete |
 
-## Current Focus
+## Database Schema
 
-The template is ready. Next steps depend on user requirements:
+| Table | Purpose |
+|-------|---------|
+| `users` | Authentication (students, faculty, HOD) |
+| `students` | Extended student information |
+| `faculty` | Faculty details and subjects |
+| `subjects` | Course catalog with credits |
+| `attendance` | Daily attendance records |
+| `marks` | Exam marks (MID-1, MID-2, SEM) |
+| `academic_years` | Academic year tracking |
 
-1. What type of application to build
-2. What features are needed
-3. Design/branding preferences
+## User Roles
+
+1. **Student**: View attendance %, marks, pass/fail status
+2. **Faculty**: Mark attendance, enter marks, edit student data
+3. **HOD**: Full department access, monitoring, reports
 
 ## Quick Start Guide
 
-### To add a new page:
+### Login Credentials (Demo)
+- Student: `23A1AI01` / any password
+- Faculty: `FAC001` / any password
+- HOD: `FAC001` / any password
 
-Create a file at `src/app/[route]/page.tsx`:
-```tsx
-export default function NewPage() {
-  return <div>New page content</div>;
-}
-```
+### To view student dashboard:
+1. Login as Student
+2. Select Academic Year (1st/2nd/3rd/4th)
+3. Select Semester (Odd/Even)
+4. View Attendance or Marks tabs
 
-### To add components:
-
-Create `src/components/` directory and add components:
-```tsx
-// src/components/ui/Button.tsx
-export function Button({ children }: { children: React.ReactNode }) {
-  return <button className="px-4 py-2 bg-blue-600 text-white rounded">{children}</button>;
-}
-```
-
-### To add a database:
-
-Follow `.kilocode/recipes/add-database.md`
-
-### To add API routes:
-
-Create `src/app/api/[route]/route.ts`:
-```tsx
-import { NextResponse } from "next/server";
-
-export async function GET() {
-  return NextResponse.json({ message: "Hello" });
-}
-```
-
-## Available Recipes
-
-| Recipe | File | Use Case |
-|--------|------|----------|
-| Add Database | `.kilocode/recipes/add-database.md` | Data persistence with Drizzle + SQLite |
-
-## Pending Improvements
-
-- [ ] Add more recipes (auth, email, etc.)
-- [ ] Add example components
-- [ ] Add testing setup recipe
+### To enter marks:
+1. Login as Faculty/HOD
+2. Navigate to Marks Entry
+3. Select Exam Type, Year, Section, Subject
+4. Enter marks and save
 
 ## Session History
 
 | Date | Changes |
 |------|---------|
 | Initial | Template created with base setup |
+| 2024-02-03 | Added login system with role selection |
+| 2024-02-03 | Created student dashboard with profile |
+| 2024-02-03 | Added attendance and marks pages |
+| 2024-02-03 | Created faculty and HOD dashboards |
+| 2024-02-03 | Added Drizzle ORM database with full schema |
