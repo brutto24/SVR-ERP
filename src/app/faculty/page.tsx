@@ -167,20 +167,12 @@ export default function FacultyDashboard() {
                 {/* Class Selection */}
                 <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Class</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
                       <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                         {academicYears.map((year) => (
                           <option key={year} value={year}>{year}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
-                      <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                        {sections.map((section) => (
-                          <option key={section} value={section}>{section}</option>
                         ))}
                       </select>
                     </div>
@@ -208,10 +200,22 @@ export default function FacultyDashboard() {
                   </div>
                 </div>
 
-                {/* Attendance Entry */}
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                  <div className="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center">
-                    <h3 className="font-semibold">Student List</h3>
+                {/* Section Selection Tabs */}
+                <div className="flex gap-2 mb-4">
+                  {sections.map((section) => (
+                    <button
+                      key={section}
+                      className="px-6 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 rounded-lg transition-colors font-medium"
+                    >
+                      {section}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Section A Attendance */}
+                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
+                  <div className="bg-indigo-600 text-white px-6 py-3 flex justify-between items-center">
+                    <h3 className="font-semibold">Section A - Student List</h3>
                     <div className="flex gap-2">
                       <button className="px-3 py-1 bg-green-500 hover:bg-green-600 rounded text-sm">Mark All Present</button>
                       <button className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm">Mark All Absent</button>
@@ -224,8 +228,10 @@ export default function FacultyDashboard() {
                           <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">S.No</th>
                           <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Student ID</th>
                           <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Name</th>
+                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Total Classes</th>
+                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present</th>
                           <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Attendance %</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Status</th>
+                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present?</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -235,28 +241,173 @@ export default function FacultyDashboard() {
                             <td className="py-3 px-4 text-sm text-gray-800">{student.id}</td>
                             <td className="py-3 px-4 text-sm text-gray-800 font-medium">{student.name}</td>
                             <td className="py-3 px-4 text-center">
+                              <input
+                                type="number"
+                                defaultValue={45}
+                                min="0"
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                              />
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <input
+                                type="number"
+                                defaultValue={Math.round(student.attendance * 45 / 100)}
+                                min="0"
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                              />
+                            </td>
+                            <td className="py-3 px-4 text-center">
                               <span className={`text-sm font-medium ${student.attendance < 75 ? 'text-red-600' : 'text-green-600'}`}>
                                 {student.attendance}%
                               </span>
                             </td>
                             <td className="py-3 px-4 text-center">
-                              <button className="w-8 h-8 bg-green-100 hover:bg-green-200 text-green-600 rounded-full flex items-center justify-center mx-auto">
-                                ✓
-                              </button>
+                              <input
+                                type="checkbox"
+                                defaultChecked
+                                className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                              />
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  <div className="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3">
-                    <button className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors">
-                      Cancel
-                    </button>
-                    <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
-                      Save Attendance
-                    </button>
+                </div>
+
+                {/* Section B Attendance */}
+                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
+                  <div className="bg-amber-600 text-white px-6 py-3 flex justify-between items-center">
+                    <h3 className="font-semibold">Section B - Student List</h3>
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1 bg-green-500 hover:bg-green-600 rounded text-sm">Mark All Present</button>
+                      <button className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm">Mark All Absent</button>
+                    </div>
                   </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">S.No</th>
+                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Student ID</th>
+                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Name</th>
+                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Total Classes</th>
+                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present</th>
+                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Attendance %</th>
+                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present?</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {studentsList.slice(0, 6).map((student, idx) => (
+                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-3 px-4 text-sm text-gray-600">{idx + 1}</td>
+                            <td className="py-3 px-4 text-sm text-gray-800">{student.id}</td>
+                            <td className="py-3 px-4 text-sm text-gray-800 font-medium">{student.name}</td>
+                            <td className="py-3 px-4 text-center">
+                              <input
+                                type="number"
+                                defaultValue={42}
+                                min="0"
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                              />
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <input
+                                type="number"
+                                defaultValue={Math.round(student.attendance * 42 / 100)}
+                                min="0"
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                              />
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <span className={`text-sm font-medium ${student.attendance < 75 ? 'text-red-600' : 'text-green-600'}`}>
+                                {student.attendance}%
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <input
+                                type="checkbox"
+                                defaultChecked
+                                className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Section C Attendance */}
+                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
+                  <div className="bg-emerald-600 text-white px-6 py-3 flex justify-between items-center">
+                    <h3 className="font-semibold">Section C - Student List</h3>
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1 bg-green-500 hover:bg-green-600 rounded text-sm">Mark All Present</button>
+                      <button className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm">Mark All Absent</button>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">S.No</th>
+                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Student ID</th>
+                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Name</th>
+                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Total Classes</th>
+                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present</th>
+                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Attendance %</th>
+                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present?</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {studentsList.slice(2, 8).map((student, idx) => (
+                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-3 px-4 text-sm text-gray-600">{idx + 1}</td>
+                            <td className="py-3 px-4 text-sm text-gray-800">{student.id}</td>
+                            <td className="py-3 px-4 text-sm text-gray-800 font-medium">{student.name}</td>
+                            <td className="py-3 px-4 text-center">
+                              <input
+                                type="number"
+                                defaultValue={40}
+                                min="0"
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                              />
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <input
+                                type="number"
+                                defaultValue={Math.round(student.attendance * 40 / 100)}
+                                min="0"
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
+                              />
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <span className={`text-sm font-medium ${student.attendance < 75 ? 'text-red-600' : 'text-green-600'}`}>
+                                {student.attendance}%
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <input
+                                type="checkbox"
+                                defaultChecked
+                                className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3">
+                  <button className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                    Cancel
+                  </button>
+                  <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
+                    Save Attendance
+                  </button>
                 </div>
               </div>
             )}
