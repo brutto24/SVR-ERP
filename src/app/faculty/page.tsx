@@ -1,12 +1,21 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { mockFaculty, subjects } from '@/lib/data';
+
+// Student type with attendance tracking
+interface StudentAttendance {
+  id: string;
+  name: string;
+  totalClasses: number;
+  presentClasses: number;
+}
 
 export default function FacultyDashboard() {
   const faculty = mockFaculty[0]; // HOD by default
   const [activeSection, setActiveSection] = useState<'dashboard' | 'attendance' | 'marks' | 'students'>('dashboard');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const academicYears = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
   const sections = ['Section A', 'Section B', 'Section C'];
@@ -22,7 +31,100 @@ export default function FacultyDashboard() {
     { period: 6, time: '02:20 - 03:10', subject: 'Mentoring', year: '2nd Year', section: 'Section A' },
   ];
 
-  // Mock students list
+  // Initialize student attendance state with mock data
+  const [studentsAttendance, setStudentsAttendance] = useState<{
+    [section: string]: StudentAttendance[];
+  }>({
+    'Section A': [
+      { id: '23A1AI01', name: 'John Smith', totalClasses: 45, presentClasses: 38 },
+      { id: '23A1AI02', name: 'Emma Johnson', totalClasses: 45, presentClasses: 41 },
+      { id: '23A1AI03', name: 'Michael Brown', totalClasses: 45, presentClasses: 35 },
+      { id: '23A1AI04', name: 'Sarah Davis', totalClasses: 45, presentClasses: 40 },
+      { id: '23A1AI05', name: 'David Wilson', totalClasses: 45, presentClasses: 43 },
+      { id: '23A1AI06', name: 'Lisa Anderson', totalClasses: 45, presentClasses: 32 },
+      { id: '23A1AI07', name: 'James Taylor', totalClasses: 45, presentClasses: 41 },
+      { id: '23A1AI08', name: 'Jennifer Martinez', totalClasses: 45, presentClasses: 38 },
+    ],
+    'Section B': [
+      { id: '23A1BI01', name: 'Robert Garcia', totalClasses: 42, presentClasses: 38 },
+      { id: '23A1BI02', name: 'Maria Rodriguez', totalClasses: 42, presentClasses: 40 },
+      { id: '23A1BI03', name: 'William Lee', totalClasses: 42, presentClasses: 35 },
+      { id: '23A1BI04', name: 'Elizabeth White', totalClasses: 42, presentClasses: 37 },
+      { id: '23A1BI05', name: 'Daniel Harris', totalClasses: 42, presentClasses: 36 },
+      { id: '23A1BI06', name: 'Susan Clark', totalClasses: 42, presentClasses: 39 },
+    ],
+    'Section C': [
+      { id: '23A1CI01', name: 'Christopher Lewis', totalClasses: 40, presentClasses: 35 },
+      { id: '23A1CI02', name: 'Ashley Walker', totalClasses: 40, presentClasses: 38 },
+      { id: '23A1CI03', name: 'Kevin Hall', totalClasses: 40, presentClasses: 32 },
+      { id: '23A1CI04', name: 'Michelle Allen', totalClasses: 40, presentClasses: 36 },
+      { id: '23A1CI05', name: 'Jason Young', totalClasses: 40, presentClasses: 34 },
+      { id: '23A1CI06', name: 'Jessica King', totalClasses: 40, presentClasses: 37 },
+    ],
+  });
+
+  // Initialize current attendance with all students marked present by default
+  // Using lazy initialization to avoid setState in effect
+  const [currentAttendance, setCurrentAttendance] = useState<{
+    [section: string]: { [studentId: string]: boolean };
+  }>(() => {
+    const initialized: { [section: string]: { [studentId: string]: boolean } } = {};
+    Object.keys(studentsAttendance).forEach(section => {
+      initialized[section] = {};
+      studentsAttendance[section].forEach(student => {
+        initialized[section][student.id] = true; // Default to present
+      });
+    });
+    return initialized;
+  });
+
+  // Calculate attendance percentage
+  const calculatePercentage = (present: number, total: number): number => {
+    if (total === 0) return 0;
+    return Math.round((present / total) * 100);
+  };
+
+  // Handle checkbox change
+  const handleAttendanceChange = (section: string, studentId: string, isPresent: boolean) => {
+    setCurrentAttendance(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [studentId]: isPresent,
+      },
+    }));
+  };
+
+  // Save attendance for a section
+  const saveAttendance = (section: string) => {
+    setSaveStatus('saving');
+    
+    setStudentsAttendance(prev => {
+      const updated = { ...prev };
+      updated[section] = updated[section].map(student => {
+        const isPresent = currentAttendance[section]?.[student.id] ?? true;
+        return {
+          ...student,
+          totalClasses: student.totalClasses + 1,
+          presentClasses: isPresent ? student.presentClasses + 1 : student.presentClasses,
+        };
+      });
+      return updated;
+    });
+
+    // Show saved feedback
+    setTimeout(() => {
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    }, 500);
+  };
+
+  // Save all sections
+  const saveAllAttendance = () => {
+    sections.forEach(section => saveAttendance(section));
+  };
+
+  // Mock marks data with stable values using useMemo
   const studentsList = [
     { id: '23A1AI01', name: 'John Smith', attendance: 85, status: 'Present' },
     { id: '23A1AI02', name: 'Emma Johnson', attendance: 92, status: 'Present' },
@@ -34,7 +136,6 @@ export default function FacultyDashboard() {
     { id: '23A1AI08', name: 'Jennifer Martinez', attendance: 85, status: 'Present' },
   ];
 
-  // Mock marks data with stable values using useMemo
   const mockMarksData = useMemo(() => {
     return studentsList.slice(0, 5).map((student, idx) => ({
       student,
@@ -43,7 +144,7 @@ export default function FacultyDashboard() {
       assignment: 3 + (idx % 3),
       total: 23 + (idx % 10)
     }));
-  }, []);
+  }, [studentsList]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -200,213 +301,83 @@ export default function FacultyDashboard() {
                   </div>
                 </div>
 
-                {/* Section Selection Tabs */}
-                <div className="flex gap-2 mb-4">
+                {/* Attendance Tables for All Sections */}
+                <div className="space-y-6">
                   {sections.map((section) => (
-                    <button
-                      key={section}
-                      className="px-6 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 rounded-lg transition-colors font-medium"
-                    >
-                      {section}
-                    </button>
+                    <div key={section} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                      <div className={`px-6 py-3 flex justify-between items-center ${
+                        section === 'Section A' ? 'bg-indigo-600' :
+                        section === 'Section B' ? 'bg-amber-600' : 'bg-emerald-600'
+                      } text-white`}>
+                        <h3 className="font-semibold">{section} - Student List</h3>
+                        <button
+                          onClick={() => saveAttendance(section)}
+                          disabled={saveStatus === 'saving'}
+                          className="px-4 py-1 bg-white text-indigo-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                        >
+                          {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? '✓ Saved' : 'Save Attendance'}
+                        </button>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="bg-gray-50">
+                              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">S.No</th>
+                              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Roll Number</th>
+                              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Name</th>
+                              <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Attendance %</th>
+                              <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present?</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {studentsAttendance[section]?.map((student, idx) => {
+                              const percentage = calculatePercentage(student.presentClasses, student.totalClasses);
+                              const isPresent = currentAttendance[section]?.[student.id] ?? true;
+                              return (
+                                <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                  <td className="py-3 px-4 text-sm text-gray-600">{idx + 1}</td>
+                                  <td className="py-3 px-4 text-sm text-gray-800">{student.id}</td>
+                                  <td className="py-3 px-4 text-sm text-gray-800 font-medium">{student.name}</td>
+                                  <td className="py-3 px-4 text-center">
+                                    <span className={`text-sm font-medium ${percentage < 75 ? 'text-red-600' : 'text-green-600'}`}>
+                                      {percentage}%
+                                    </span>
+                                    <span className="text-xs text-gray-400 ml-1">
+                                      ({student.presentClasses}/{student.totalClasses})
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-4 text-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={isPresent}
+                                      onChange={(e) => handleAttendanceChange(section, student.id, e.target.checked)}
+                                      className="w-5 h-5 text-green-600 rounded focus:ring-green-500 cursor-pointer"
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   ))}
                 </div>
 
-                {/* Section A Attendance */}
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-                  <div className="bg-indigo-600 text-white px-6 py-3 flex justify-between items-center">
-                    <h3 className="font-semibold">Section A - Student List</h3>
-                    <div className="flex gap-2">
-                      <button className="px-3 py-1 bg-green-500 hover:bg-green-600 rounded text-sm">Mark All Present</button>
-                      <button className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm">Mark All Absent</button>
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">S.No</th>
-                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Student ID</th>
-                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Name</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Total Classes</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Attendance %</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present?</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {studentsList.map((student, idx) => (
-                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="py-3 px-4 text-sm text-gray-600">{idx + 1}</td>
-                            <td className="py-3 px-4 text-sm text-gray-800">{student.id}</td>
-                            <td className="py-3 px-4 text-sm text-gray-800 font-medium">{student.name}</td>
-                            <td className="py-3 px-4 text-center">
-                              <input
-                                type="number"
-                                defaultValue={45}
-                                min="0"
-                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
-                              />
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <input
-                                type="number"
-                                defaultValue={Math.round(student.attendance * 45 / 100)}
-                                min="0"
-                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
-                              />
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <span className={`text-sm font-medium ${student.attendance < 75 ? 'text-red-600' : 'text-green-600'}`}>
-                                {student.attendance}%
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <input
-                                type="checkbox"
-                                defaultChecked
-                                className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Section B Attendance */}
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-                  <div className="bg-amber-600 text-white px-6 py-3 flex justify-between items-center">
-                    <h3 className="font-semibold">Section B - Student List</h3>
-                    <div className="flex gap-2">
-                      <button className="px-3 py-1 bg-green-500 hover:bg-green-600 rounded text-sm">Mark All Present</button>
-                      <button className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm">Mark All Absent</button>
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">S.No</th>
-                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Student ID</th>
-                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Name</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Total Classes</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Attendance %</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present?</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {studentsList.slice(0, 6).map((student, idx) => (
-                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="py-3 px-4 text-sm text-gray-600">{idx + 1}</td>
-                            <td className="py-3 px-4 text-sm text-gray-800">{student.id}</td>
-                            <td className="py-3 px-4 text-sm text-gray-800 font-medium">{student.name}</td>
-                            <td className="py-3 px-4 text-center">
-                              <input
-                                type="number"
-                                defaultValue={42}
-                                min="0"
-                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
-                              />
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <input
-                                type="number"
-                                defaultValue={Math.round(student.attendance * 42 / 100)}
-                                min="0"
-                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
-                              />
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <span className={`text-sm font-medium ${student.attendance < 75 ? 'text-red-600' : 'text-green-600'}`}>
-                                {student.attendance}%
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <input
-                                type="checkbox"
-                                defaultChecked
-                                className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Section C Attendance */}
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-                  <div className="bg-emerald-600 text-white px-6 py-3 flex justify-between items-center">
-                    <h3 className="font-semibold">Section C - Student List</h3>
-                    <div className="flex gap-2">
-                      <button className="px-3 py-1 bg-green-500 hover:bg-green-600 rounded text-sm">Mark All Present</button>
-                      <button className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm">Mark All Absent</button>
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">S.No</th>
-                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Student ID</th>
-                          <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Name</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Total Classes</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Attendance %</th>
-                          <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Present?</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {studentsList.slice(2, 8).map((student, idx) => (
-                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="py-3 px-4 text-sm text-gray-600">{idx + 1}</td>
-                            <td className="py-3 px-4 text-sm text-gray-800">{student.id}</td>
-                            <td className="py-3 px-4 text-sm text-gray-800 font-medium">{student.name}</td>
-                            <td className="py-3 px-4 text-center">
-                              <input
-                                type="number"
-                                defaultValue={40}
-                                min="0"
-                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
-                              />
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <input
-                                type="number"
-                                defaultValue={Math.round(student.attendance * 40 / 100)}
-                                min="0"
-                                className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
-                              />
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <span className={`text-sm font-medium ${student.attendance < 75 ? 'text-red-600' : 'text-green-600'}`}>
-                                {student.attendance}%
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <input
-                                type="checkbox"
-                                defaultChecked
-                                className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3">
-                  <button className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors">
-                    Cancel
-                  </button>
-                  <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
-                    Save Attendance
+                {/* Global Save Button */}
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={saveAllAttendance}
+                    disabled={saveStatus === 'saving'}
+                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {saveStatus === 'saving' ? (
+                      <>Saving...</>
+                    ) : saveStatus === 'saved' ? (
+                      <>✓ All Saved</>
+                    ) : (
+                      <>💾 Save All Attendance</>
+                    )}
                   </button>
                 </div>
               </div>
