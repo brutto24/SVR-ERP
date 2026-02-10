@@ -8,6 +8,20 @@
       "when": 1770143346312,
       "tag": "0000_nifty_thena",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770405259949,
+      "tag": "0001_sudden_quentin_quire",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770473131494,
+      "tag": "0002_early_ozymandias",
+      "breakpoints": true
     }
   ]
 }

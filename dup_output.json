@@ -1,0 +1,220 @@
+{
+  "subjects": [
+    {
+      "id": "sub-cloud-computing-for-ai",
+      "name": "CLOUD COMPUTING FOR AI",
+      "code": "CLO-309",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-big-data-analytics---ai-applications",
+      "name": "BIG DATA ANALYTICS & AI APPLICATIONS",
+      "code": "BIG-701",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-full-stack-ai-development",
+      "name": "FULL STACK AI DEVELOPMENT",
+      "code": "FUL-285",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-blockchain-for-ai",
+      "name": "BLOCKCHAIN FOR AI",
+      "code": "BLO-81",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-ai-for-finance",
+      "name": "AI FOR FINANCE",
+      "code": "AI -567",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-disaster-management",
+      "name": "DISASTER MANAGEMENT",
+      "code": "DIS-175",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-big-data---cloud-computing-lab",
+      "name": "BIG DATA & CLOUD COMPUTING LAB",
+      "code": "BIG-712",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 2,
+      "type": "lab"
+    },
+    {
+      "id": "sub-full-stack-ai-lab",
+      "name": "FULL STACK AI LAB",
+      "code": "FUL-911",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 2,
+      "type": "lab"
+    },
+    {
+      "id": "sub-soft-skills",
+      "name": "SOFT SKILLS",
+      "code": "SOF-716",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-technical-paper-writing---ipr",
+      "name": "TECHNICAL PAPER WRITING & IPR",
+      "code": "TEC-180",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-campus-recruitment-training",
+      "name": "CAMPUS RECRUITMENT TRAINING",
+      "code": "CAM-354",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-mentoring",
+      "name": "MENTORING",
+      "code": "MEN-694",
+      "batchId": "batch-2023-2027",
+      "semester": "1-1",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-23a30604b",
+      "name": "CLOUD COMPUTING FOR AI",
+      "code": "23A30604b",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-23a31601",
+      "name": "BIG DATA ANALYTICS & AI APPLICATIONS",
+      "code": "23A31601",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-23a31602t",
+      "name": "FULL STACK AI DEVELOPMENT",
+      "code": "23A31602T",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-23a31603b",
+      "name": "BLOCKCHAIN FOR AI",
+      "code": "23A31603b",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-23a30603c",
+      "name": "AI FOR FINANCE",
+      "code": "23A30603c",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-23a01606a",
+      "name": "DISASTER MANAGEMENT",
+      "code": "23A01606a",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 3,
+      "type": "theory"
+    },
+    {
+      "id": "sub-23a31605",
+      "name": "BIG DATA & CLOUD COMPUTING LAB",
+      "code": "23A31605",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 2,
+      "type": "lab"
+    },
+    {
+      "id": "sub-23a31602p",
+      "name": "FULL STACK AI LAB",
+      "code": "23A31602P",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 2,
+      "type": "lab"
+    },
+    {
+      "id": "sub-23a52501",
+      "name": "SOFT SKILLS",
+      "code": "23A52501",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 2,
+      "type": "lab"
+    },
+    {
+      "id": "sub-23a52601",
+      "name": "TECHNICAL PAPER WRITING & IPR",
+      "code": "23A52601",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 0,
+      "type": "theory"
+    },
+    {
+      "id": "sub-crt",
+      "name": "CAMPUS RECRUITMENT TRAINING",
+      "code": "CRT",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 0,
+      "type": "theory"
+    },
+    {
+      "id": "sub-mntg",
+      "name": "MENTORING",
+      "code": "MNTG",
+      "batchId": "batch-2025-2026",
+      "semester": "3-2",
+      "credits": 0,
+      "type": "theory"
+    }
+  ]
+}
