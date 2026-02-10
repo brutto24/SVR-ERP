@@ -17,6 +17,20 @@ export default async function Page() {
             user: true,
             class: true,
             batch: true
+        },
+        columns: {
+            id: true,
+            registerNumber: true,
+            cgpa: true,
+            sgpa: true,
+            currentSemester: true,
+            profilePicture: true,
+            mobileNumber: true,
+            parentName: true,
+            parentMobile: true,
+            address: true,
+            aadharNumber: true,
+            apaarId: true
         }
     });
 
@@ -174,7 +188,13 @@ export default async function Page() {
             cgpa: studentRecord.cgpa || "0.0",
             sgpa: studentRecord.sgpa || "0.0",
             currentSemester: studentRecord.currentSemester,
-            profilePicture: studentRecord.profilePicture
+            profilePicture: studentRecord.profilePicture,
+            mobileNumber: studentRecord.mobileNumber || undefined,
+            parentName: studentRecord.parentName || undefined,
+            parentMobile: studentRecord.parentMobile || undefined,
+            address: studentRecord.address || undefined,
+            aadharNumber: studentRecord.aadharNumber || undefined,
+            apaarId: studentRecord.apaarId || undefined,
         }}
         attendance={attendanceStats}
         overallAttendance={overallAttendance}

@@ -45,6 +45,15 @@ export const students = pgTable("students", {
   classId: text("class_id").references(() => classes.id).notNull(),
   registerNumber: text("register_number").notNull().unique(), // e.g., 23A1AI01
   currentSemester: text("current_semester").notNull(), // "1-1", "1-2", etc.
+
+  // New Fields
+  mobileNumber: text("mobile_number"),
+  parentName: text("parent_name"),
+  parentMobile: text("parent_mobile"),
+  address: text("address"),
+  aadharNumber: text("aadhar_number"),
+  apaarId: text("apaar_id"),
+
   status: text("status", { enum: ["active", "passed", "dropped"] }).notNull().default("active"),
   attendancePercentage: integer("attendance_percentage").default(0),
   cgpa: text("cgpa").default("0.0"), // Using text for precision retention ease or float
@@ -145,6 +154,9 @@ export const classTeachers = pgTable("class_teachers", {
   facultyId: text("faculty_id").references(() => faculty.id).notNull(),
   batchId: text("batch_id").references(() => academicBatches.id).notNull(),
   classId: text("class_id").references(() => classes.id).notNull(),
+
+  // Permission Flag
+  canEditStudentData: boolean("can_edit_student_data").notNull().default(false),
 }, (t) => ({
   // Ensure one class teacher per class per batch? Or maybe multiple allowed? 
   // Usually one main class teacher. Let's start with unique constraint to be safe.
@@ -199,6 +211,7 @@ export const facultyRelations = relations(faculty, ({ one, many }) => ({
     references: [users.id],
   }),
   assignments: many(facultySubjects),
+  classTeachers: many(classTeachers),
 }));
 
 export const academicBatchesRelations = relations(academicBatches, ({ many }) => ({

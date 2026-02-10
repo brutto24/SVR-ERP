@@ -41,7 +41,7 @@ export default function SubjectAssignmentManager({
 }: {
     facultyId: string;
     subjects: Subject[];
-    classes: Class[];
+    classes: (Class & { batchId: string })[];
     batches: Batch[];
     assignments: Assignment[];
 }) {
@@ -382,9 +382,11 @@ export default function SubjectAssignmentManager({
                                     onChange={(e) => setSelectedClass(e.target.value)}
                                 >
                                     <option value="">Select Class...</option>
-                                    {classes.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
+                                    {classes
+                                        .filter(c => !selectedBatch || c.batchId === selectedBatch)
+                                        .map(c => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
                                 </select>
                             </div>
 

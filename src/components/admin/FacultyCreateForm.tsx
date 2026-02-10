@@ -12,11 +12,13 @@ type Batch = {
 type Class = {
     id: string;
     name: string;
+    batchId: string;
 };
 
 export default function FacultyCreateForm({ batches, classes }: { batches: Batch[], classes: Class[] }) {
     const [isPending, setIsPending] = useState(false);
     const [roleType, setRoleType] = useState<"subject_teacher" | "class_teacher">("subject_teacher");
+    const [selectedBatchId, setSelectedBatchId] = useState("");
     const [message, setMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
 
     async function handleSubmit(formData: FormData) {
@@ -140,7 +142,12 @@ export default function FacultyCreateForm({ batches, classes }: { batches: Batch
                         <div className="space-y-1.5 order-5 md:col-span-1">
                             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Assign Batch</label>
                             <div className="relative">
-                                <select name="batchId" required={roleType === "class_teacher"} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none appearance-none bg-white transition-all">
+                                <select
+                                    name="batchId"
+                                    required={roleType === "class_teacher"}
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none appearance-none bg-white transition-all"
+                                    onChange={(e) => setSelectedBatchId(e.target.value)}
+                                >
                                     <option value="">Select Batch...</option>
                                     {batches.map(b => (
                                         <option key={b.id} value={b.id}>{b.name}</option>
@@ -157,9 +164,11 @@ export default function FacultyCreateForm({ batches, classes }: { batches: Batch
                             <div className="relative">
                                 <select name="classId" required={roleType === "class_teacher"} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none appearance-none bg-white transition-all">
                                     <option value="">Select Class...</option>
-                                    {classes.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
+                                    {classes
+                                        .filter(c => c.batchId === selectedBatchId)
+                                        .map(c => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
                                 </select>
                                 <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500">
                                     <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>

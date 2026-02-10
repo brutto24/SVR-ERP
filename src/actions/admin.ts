@@ -3,15 +3,33 @@
 import { db } from "@/db";
 import { academicBatches, classes, subjects, users, students, faculty, facultySubjects, timetable, classTeachers, attendance, marks } from "@/db/schema";
 import { eq, and, not } from "drizzle-orm";
-import { encryptPassword } from "@/lib/auth";
+import { encryptPassword, getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 // --- BATCH MANAGEMENT ---
 export async function createBatch(data: { name: string; startDate: Date; endDate: Date }) {
     try {
+        // Check for duplicate Name (Case Insensitive)
+        const allBatches = await db.select().from(academicBatches);
+
+        const duplicateName = allBatches.find(b => b.name.toLowerCase() === data.name.toLowerCase().trim());
+        if (duplicateName) {
+            return { success: false, error: "A batch with this name already exists." };
+        }
+
+        // Check for duplicate Academic Years (Start & End Date)
+        const duplicateYear = allBatches.find(b =>
+            b.startDate.getFullYear() === data.startDate.getFullYear() &&
+            b.endDate.getFullYear() === data.endDate.getFullYear()
+        );
+
+        if (duplicateYear) {
+            return { success: false, error: `A batch for the academic year ${data.startDate.getFullYear()}-${data.endDate.getFullYear()} already exists.` };
+        }
+
         await db.insert(academicBatches).values({
             id: crypto.randomUUID(),
-            name: data.name,
+            name: data.name.trim(),
             startDate: data.startDate,
             endDate: data.endDate,
         });
@@ -36,8 +54,64 @@ export async function updateBatch(batchId: string, data: { name: string; isActiv
     }
 }
 
-export async function deleteBatch(batchId: string) {
+export async function deleteBatch(batchId: string, force: boolean = false) {
     try {
+        // 0. Check for Data Dependencies (Safety Check)
+        if (!force) {
+            const studentCount = await db.select({ count: students.id }).from(students).where(eq(students.batchId, batchId)).limit(1);
+            const classCount = await db.select({ count: classes.id }).from(classes).where(eq(classes.batchId, batchId)).limit(1);
+            const subjectCount = await db.select({ count: subjects.id }).from(subjects).where(eq(subjects.batchId, batchId)).limit(1);
+
+            const hasStudents = studentCount.length > 0;
+            const hasClasses = classCount.length > 0;
+            const hasSubjects = subjectCount.length > 0;
+
+            let hasAttendance = false;
+            let hasMarks = false;
+
+            if (hasStudents) {
+                // If Students exist, check if they have Attendance or Marks
+                const attendanceCheck = await db.select({ id: attendance.id })
+                    .from(attendance)
+                    .innerJoin(students, eq(attendance.studentId, students.id))
+                    .where(eq(students.batchId, batchId))
+                    .limit(1);
+
+                const marksCheck = await db.select({ id: marks.id })
+                    .from(marks)
+                    .innerJoin(students, eq(marks.studentId, students.id))
+                    .where(eq(students.batchId, batchId))
+                    .limit(1);
+
+                hasAttendance = attendanceCheck.length > 0;
+                hasMarks = marksCheck.length > 0;
+            }
+
+            const associatedData: string[] = [];
+            if (hasClasses) associatedData.push("Classes");
+            if (hasSubjects) associatedData.push("Subjects");
+            if (hasStudents) associatedData.push("Student Information");
+            if (hasAttendance) associatedData.push("Student Attendance");
+            if (hasMarks) associatedData.push("Student Marks");
+
+
+            if (associatedData.length > 0) {
+                const dataList = associatedData.join(", ");
+                return {
+                    success: false,
+                    requiresConfirmation: true,
+                    error: `This batch contains associated data (${dataList}). Deleting it will permanently remove all this data.`,
+                    details: {
+                        hasStudents,
+                        hasClasses,
+                        hasSubjects,
+                        hasAttendance,
+                        hasMarks
+                    }
+                };
+            }
+        }
+
         await db.transaction(async (tx) => {
             // 1. Delete Class Teacher Assignments (Linked to Batch)
             await tx.delete(classTeachers).where(eq(classTeachers.batchId, batchId));
@@ -74,7 +148,11 @@ export async function deleteBatch(batchId: string) {
                 await tx.delete(users).where(eq(users.id, stu.userId));
             }
 
-            // 5. Delete Batch
+            // 5. Delete Classes linked to this Batch (Critical Step Missing Previously)
+            // Note: Students linked to classes are already deleted in step 4.
+            await tx.delete(classes).where(eq(classes.batchId, batchId));
+
+            // 6. Delete Batch
             await tx.delete(academicBatches).where(eq(academicBatches.id, batchId));
         });
 
@@ -220,13 +298,42 @@ export async function deleteSubject(subjectId: string, force: boolean = false) {
 // --- USER MANAGEMENT ---
 export async function createStudent(data: {
     name: string;
-    // email: string; // Removed as per user request
     registerNumber: string;
     batchId: string;
     classId: string;
-    currentSemester: string
+    currentSemester: string;
+    // New Fields
+    mobileNumber?: string;
+    parentName?: string;
+    parentMobile?: string;
+    address?: string;
+    aadharNumber?: string;
+    apaarId?: string;
 }) {
     try {
+        const session = await getSession();
+        if (!session) return { success: false, error: "Unauthorized" };
+
+        if (session.role !== "admin") {
+            if (session.role !== "faculty") return { success: false, error: "Unauthorized" };
+
+            // Check Class Teacher Permission
+            const permission = await db.query.classTeachers.findFirst({
+                where: and(
+                    eq(classTeachers.batchId, data.batchId),
+                    eq(classTeachers.classId, data.classId),
+                    eq(classTeachers.facultyId, (await db.query.faculty.findFirst({
+                        where: eq(faculty.userId, session.userId),
+                        columns: { id: true }
+                    }))?.id || "")
+                ),
+                columns: { canEditStudentData: true }
+            });
+
+            if (!permission?.canEditStudentData) {
+                return { success: false, error: "You do not have permission to add students to this class." };
+            }
+        }
         const hashedPassword = await encryptPassword(data.registerNumber); // Default password is Register Number
         const userId = crypto.randomUUID();
         const generatedEmail = `${data.registerNumber.toLowerCase()}@student.svr.edu`; // Auto-generate email
@@ -249,6 +356,13 @@ export async function createStudent(data: {
                 batchId: data.batchId,
                 classId: data.classId,
                 currentSemester: data.currentSemester,
+                // New Fields
+                mobileNumber: data.mobileNumber,
+                parentName: data.parentName,
+                parentMobile: data.parentMobile,
+                address: data.address,
+                aadharNumber: data.aadharNumber,
+                apaarId: data.apaarId,
             });
         });
 
@@ -264,9 +378,15 @@ export async function updateStudent(
     studentId: string,
     data: {
         name: string;
-        // email: string; 
         registerNumber: string;
         currentSemester: string;
+        // New Fields
+        mobileNumber?: string;
+        parentName?: string;
+        parentMobile?: string;
+        address?: string;
+        aadharNumber?: string;
+        apaarId?: string;
     }
 ) {
     try {
@@ -277,13 +397,34 @@ export async function updateStudent(
 
         if (!studentRecord) return { success: false, error: "Student not found" };
 
+        const session = await getSession();
+        if (!session) return { success: false, error: "Unauthorized" };
+
+        if (session.role !== "admin") {
+            if (session.role !== "faculty") return { success: false, error: "Unauthorized" };
+
+            // Check Class Teacher Permission for the student's class
+            const permission = await db.query.classTeachers.findFirst({
+                where: and(
+                    eq(classTeachers.batchId, studentRecord.batchId),
+                    eq(classTeachers.classId, studentRecord.classId),
+                    eq(classTeachers.facultyId, (await db.query.faculty.findFirst({
+                        where: eq(faculty.userId, session.userId),
+                        columns: { id: true }
+                    }))?.id || "")
+                ),
+                columns: { canEditStudentData: true }
+            });
+
+            if (!permission?.canEditStudentData) {
+                return { success: false, error: "You do not have permission to edit students in this class." };
+            }
+        }
+
         const generatedEmail = `${data.registerNumber.toLowerCase()}@student.svr.edu`;
 
         await db.transaction(async (tx) => {
-            // Check if Register Number changed (simple check usually, but safely we overwrite password if requested)
-            // User requested: "if the admin change the student id... password should be update"
-            // We should check previous record. `studentRecord` has current data.
-
+            // Check if Register Number changed
             const isIdChanged = studentRecord.registerNumber !== data.registerNumber;
             const updateData: any = {
                 name: data.name,
@@ -306,6 +447,13 @@ export async function updateStudent(
                 .set({
                     registerNumber: data.registerNumber,
                     currentSemester: data.currentSemester,
+                    // New Fields
+                    mobileNumber: data.mobileNumber,
+                    parentName: data.parentName,
+                    parentMobile: data.parentMobile,
+                    address: data.address,
+                    aadharNumber: data.aadharNumber,
+                    apaarId: data.apaarId,
                 })
                 .where(eq(students.id, studentId));
         });
@@ -527,6 +675,20 @@ export async function toggleFacultyStatus(facultyId: string, currentStatus: bool
     }
 }
 
+export async function toggleClassTeacherPermission(facultyId: string, canEdit: boolean) {
+    try {
+        await db.update(classTeachers)
+            .set({ canEditStudentData: canEdit })
+            .where(eq(classTeachers.facultyId, facultyId));
+
+        revalidatePath("/admin/faculty");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to toggle permission:", error);
+        return { success: false, error: "Failed to toggle permission" };
+    }
+}
+
 // --- FACULTY ASSIGNMENT ---
 export async function assignSubjectToFaculty(facultyId: string, subjectId: string, classId: string) {
     try {
@@ -570,6 +732,30 @@ export async function deleteStudent(studentId: string) {
         });
 
         if (!studentRecord) return { success: false, error: "Student not found" };
+
+        const session = await getSession();
+        if (!session) return { success: false, error: "Unauthorized" };
+
+        if (session.role !== "admin") {
+            if (session.role !== "faculty") return { success: false, error: "Unauthorized" };
+
+            // Check Class Teacher Permission for the student's class
+            const permission = await db.query.classTeachers.findFirst({
+                where: and(
+                    eq(classTeachers.batchId, studentRecord.batchId),
+                    eq(classTeachers.classId, studentRecord.classId),
+                    eq(classTeachers.facultyId, (await db.query.faculty.findFirst({
+                        where: eq(faculty.userId, session.userId),
+                        columns: { id: true }
+                    }))?.id || "")
+                ),
+                columns: { canEditStudentData: true }
+            });
+
+            if (!permission?.canEditStudentData) {
+                return { success: false, error: "You do not have permission to delete students." };
+            }
+        }
 
         await db.transaction(async (tx) => {
             // Delete related records (marks, attendance) first if they existed - for now just student/user

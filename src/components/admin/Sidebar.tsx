@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout, logoutFromAllDevices } from "@/actions/auth";
-import { LayoutDashboard, Users, BookOpen, GraduationCap, School, ClipboardCheck, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, GraduationCap, School, ClipboardCheck, LogOut, BarChart3 } from "lucide-react";
 
 export default function Sidebar() {
     const pathname = usePathname();
@@ -43,6 +43,12 @@ export default function Sidebar() {
                         label="Attendance"
                         icon={<ClipboardCheck size={20} />}
                         active={isActive("/admin/attendance")}
+                    />
+                    <NavLink
+                        href="/admin/marks"
+                        label="Marks"
+                        icon={<BarChart3 size={20} />}
+                        active={isActive("/admin/marks")}
                     />
 
                     <div className="pt-4 pb-2 text-xs font-bold text-gray-400 uppercase tracking-wider px-3 flex items-center gap-2">

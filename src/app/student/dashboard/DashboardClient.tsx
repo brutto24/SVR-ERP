@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { ChevronDown, Camera, Trash2, User } from "lucide-react";
+import { ChevronDown, Camera, Trash2, User, Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { uploadProfilePicture, deleteProfilePicture } from "@/actions/student";
+import { StudentDetailsModal } from "@/components/admin/StudentDetailsModal";
+import StudentMarksDetailModal from "@/components/student/StudentMarksDetailModal";
 
 const SEMESTERS = ["1-1", "1-2", "2-1", "2-2", "3-1", "3-2", "4-1", "4-2"];
 
@@ -17,6 +19,12 @@ type DashboardProps = {
         sgpa: string;
         currentSemester: string;
         profilePicture?: string | null;
+        mobileNumber?: string;
+        parentName?: string;
+        parentMobile?: string;
+        address?: string;
+        aadharNumber?: string;
+        apaarId?: string;
     };
     attendance: {
         subject: string;
@@ -61,11 +69,13 @@ type DashboardProps = {
 };
 
 export default function StudentDashboardClient({ profile, attendance, marks, overallAttendance, monthlyAttendance, attendanceHistory, timetable }: DashboardProps) {
-    const [activeSem, setActiveSem] = useState(profile.currentSemester || "2-1");
+    const [activeSem, setActiveSem] = useState(profile.currentSemester || "1-1");
     const [internalView, setInternalView] = useState<"total" | "mid1" | "mid2" | "lab_internal">("total");
     const [externalView, setExternalView] = useState<"total" | "semester_external" | "lab_external">("total");
     const [isUploading, setIsUploading] = useState(false);
     const [isSemDropdownOpen, setIsSemDropdownOpen] = useState(false);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isMarksDetailOpen, setIsMarksDetailOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
 
@@ -141,6 +151,40 @@ export default function StudentDashboardClient({ profile, attendance, marks, ove
 
     return (
         <div className="space-y-6">
+            <StudentDetailsModal
+                isOpen={isDetailsModalOpen}
+                onClose={() => setIsDetailsModalOpen(false)}
+                student={{
+                    id: profile.registerNumber, // UI expects ID, using RegNo
+                    name: profile.name,
+                    registerNumber: profile.registerNumber,
+                    currentSemester: profile.currentSemester,
+                    cgpa: profile.cgpa,
+                    isActive: true,
+                    mobileNumber: profile.mobileNumber,
+                    parentName: profile.parentName,
+                    parentMobile: profile.parentMobile,
+                    address: profile.address,
+                    aadharNumber: profile.aadharNumber,
+                    apaarId: profile.apaarId
+                }}
+            />
+
+            <StudentMarksDetailModal
+                isOpen={isMarksDetailOpen}
+                onCloseAction={() => setIsMarksDetailOpen(false)}
+                marks={filteredMarks}
+                profile={{
+                    name: profile.name,
+                    registerNumber: profile.registerNumber,
+                    className: profile.className,
+                    sgpa: profile.sgpa,
+                    cgpa: profile.cgpa
+                }}
+            />
+
+
+
             {/* Modal for Attendance History or Timetable */}
             {viewMode && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setViewMode(null)}>
@@ -366,9 +410,19 @@ export default function StudentDashboardClient({ profile, attendance, marks, ove
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-4 rounded-xl shadow-lg shadow-indigo-200">
-                    <div className="text-indigo-100 text-xs font-medium mb-1">Semester</div>
-                    <div className="text-2xl font-bold">{activeSem}</div>
+                <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3 min-w-[140px]">
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col items-center justify-center flex-1">
+                            <div className="text-xs text-center text-gray-500 font-semibold uppercase tracking-wider mb-1">Semester</div>
+                            <div className="text-2xl font-bold text-gray-800">{profile.currentSemester}</div>
+                        </div>
+                        <button
+                            onClick={() => setIsDetailsModalOpen(true)}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 transition-all hover:shadow-indigo-300 hover:scale-[1.02] active:scale-95"
+                        >
+                            <User className="w-4 h-4" /> View Data
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -433,27 +487,37 @@ export default function StudentDashboardClient({ profile, attendance, marks, ove
                     <h3 className="font-bold text-gray-800 flex items-center gap-2">
                         <span className="w-1 h-6 bg-pink-500 rounded-full" /> Academic Performance
                     </h3>
-                    <div className="relative">
+                    <div className="flex items-center gap-3">
                         <button
-                            onClick={() => setIsSemDropdownOpen(!isSemDropdownOpen)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors"
+                            onClick={() => setIsMarksDetailOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white rounded-lg shadow-lg shadow-pink-200 transition-all hover:shadow-pink-300 hover:scale-[1.02] active:scale-95 text-sm font-bold"
                         >
-                            Semester {activeSem} <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isSemDropdownOpen ? 'rotate-180' : ''}`} />
+                            <Eye className="w-4 h-4" />
+                            View Data
                         </button>
 
-                        {isSemDropdownOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20 max-h-60 overflow-y-auto">
-                                {SEMESTERS.map(sem => (
-                                    <button
-                                        key={sem}
-                                        onClick={() => { setActiveSem(sem); setIsSemDropdownOpen(false); }}
-                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${activeSem === sem ? 'text-indigo-600 font-medium bg-indigo-50' : 'text-gray-700'}`}
-                                    >
-                                        {sem}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsSemDropdownOpen(!isSemDropdownOpen)}
+                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm text-sm font-medium"
+                            >
+                                Semester {activeSem} <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isSemDropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {isSemDropdownOpen && (
+                                <div className="absolute top-full right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20 max-h-60 overflow-y-auto">
+                                    {SEMESTERS.map(sem => (
+                                        <button
+                                            key={sem}
+                                            onClick={() => { setActiveSem(sem); setIsSemDropdownOpen(false); }}
+                                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${activeSem === sem ? 'text-indigo-600 font-medium bg-indigo-50' : 'text-gray-700'}`}
+                                        >
+                                            {sem}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -543,6 +607,6 @@ export default function StudentDashboardClient({ profile, attendance, marks, ove
                     </table>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

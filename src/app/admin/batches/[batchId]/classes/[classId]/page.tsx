@@ -1,7 +1,7 @@
 
 import { db } from "@/db";
 import { classes, academicBatches, students, users } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 // Explicit import check
 import StudentManager from "@/components/admin/StudentManager";
 import Link from "next/link";
@@ -20,8 +20,19 @@ export default async function ClassStudentsPage(props: { params: Promise<{ batch
     const rawStudents = await db.select({
         id: students.id,
         name: users.name,
+        email: users.email,
+        isActive: users.isActive,
         registerNumber: students.registerNumber,
+        currentSemester: students.currentSemester,
+        cgpa: students.cgpa,
         attendancePercentage: students.attendancePercentage,
+        // New Fields
+        mobileNumber: students.mobileNumber,
+        parentName: students.parentName,
+        parentMobile: students.parentMobile,
+        address: students.address,
+        aadharNumber: students.aadharNumber,
+        apaarId: students.apaarId,
         userId: students.userId,
     })
         .from(students)
@@ -30,13 +41,44 @@ export default async function ClassStudentsPage(props: { params: Promise<{ batch
             eq(students.batchId, params.batchId),
             eq(students.classId, params.classId)
         ))
+        .orderBy(asc(students.registerNumber))
         .execute();
 
     // Transform for Client Component
     const studentList = rawStudents.map(s => ({
         ...s,
-        attendancePercentage: s.attendancePercentage || 0
+        cgpa: s.cgpa || "0.0",
+        attendancePercentage: s.attendancePercentage || 0,
     }));
+
+    // Check Permissions
+    const { getSession } = await import("@/lib/auth");
+    const session = await getSession();
+    const { faculty, classTeachers } = await import("@/db/schema");
+
+    let canEdit = false;
+    if (session?.role === "admin") {
+        console.log("User is admin, enabling edit");
+        canEdit = true;
+    } else if (session?.role === "faculty") {
+        // Check if this faculty is the class teacher for this class AND has permission
+        const facultyRecord = await db.query.faculty.findFirst({
+            where: eq(faculty.userId, session.userId),
+            with: {
+                classTeachers: {
+                    where: and(
+                        eq(classTeachers.classId, params.classId),
+                        eq(classTeachers.batchId, params.batchId)
+                    )
+                }
+            }
+        });
+
+        // Check if assigned and has permission
+        if (facultyRecord?.classTeachers && facultyRecord.classTeachers.length > 0) {
+            canEdit = facultyRecord.classTeachers[0].canEditStudentData;
+        }
+    }
 
     return (
         <div className="space-y-6">
@@ -54,6 +96,7 @@ export default async function ClassStudentsPage(props: { params: Promise<{ batch
                 batchId={params.batchId}
                 classId={params.classId}
                 students={studentList}
+                canEdit={true}
             />
         </div>
     );

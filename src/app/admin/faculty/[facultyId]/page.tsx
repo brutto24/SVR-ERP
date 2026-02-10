@@ -85,7 +85,7 @@ export default async function FacultyProfilePage({ params }: { params: { faculty
 
     // 4. Fetch Meta Data for Assignment (All Subjects & Classes)
     const allSubjects = await db.select({ id: subjects.id, name: subjects.name, code: subjects.code, semester: subjects.semester, batchId: subjects.batchId }).from(subjects);
-    const allClasses = await db.select({ id: classes.id, name: classes.name }).from(classes);
+    const allClasses = await db.select({ id: classes.id, name: classes.name, batchId: classes.batchId }).from(classes);
     const allBatches = await db.select({ id: academicBatches.id, name: academicBatches.name }).from(academicBatches).where(eq(academicBatches.isActive, true));
 
     // 5. Fetch Timetable
@@ -108,7 +108,6 @@ export default async function FacultyProfilePage({ params }: { params: { faculty
                             <p className="text-gray-500 mt-1">{facultyData.designation} • {facultyData.department}</p>
                             <div className="flex gap-4 mt-4 text-sm text-gray-600">
                                 <span className="bg-gray-100 px-3 py-1 rounded-full">ID: {facultyData.employeeId}</span>
-                                <span className="bg-gray-100 px-3 py-1 rounded-full">{facultyData.email}</span>
                             </div>
                         </div>
                         <div className="h-16 w-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl font-bold">

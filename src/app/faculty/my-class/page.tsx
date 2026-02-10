@@ -1,7 +1,7 @@
 
 import { db } from "@/db";
 import { faculty, users, classTeachers, students, attendance, marks, subjects } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import MyClassClient from "@/components/faculty/MyClassClient";
@@ -52,11 +52,18 @@ export default async function MyClassPage() {
         registerNumber: students.registerNumber,
         name: users.name,
         email: users.email,
-        profilePicture: students.profilePicture, // Assuming this field exists
+        profilePicture: students.profilePicture,
         status: students.status,
         currentSemester: students.currentSemester,
         cgpa: students.cgpa,
-        attendancePercentage: students.attendancePercentage
+        attendancePercentage: students.attendancePercentage,
+        // Added new fields
+        mobileNumber: students.mobileNumber,
+        parentName: students.parentName,
+        parentMobile: students.parentMobile,
+        address: students.address,
+        aadharNumber: students.aadharNumber,
+        apaarId: students.apaarId
     })
         .from(students)
         .innerJoin(users, eq(students.userId, users.id))
@@ -68,58 +75,87 @@ export default async function MyClassPage() {
         )
         .orderBy(students.registerNumber);
 
-    // 4. Fetch Attendance Summary (Optional: for more detailed Month-wise or just pass simple stats)
-    // We can fetch initial detailed data or let client fetch on demand.
-    // For now, let's pass the student list which has 'attendancePercentage'.
-    // We might need subject-wise attendance later.
+    // 4. Fetch Attendance Stats (Real Calculation - All Semesters)
+    const stats = await db.select({
+        studentId: attendance.studentId,
+        isPresent: attendance.isPresent,
+        subjectId: attendance.subjectId,
+        semester: subjects.semester
+    })
+        .from(attendance)
+        .innerJoin(subjects, eq(attendance.subjectId, subjects.id))
+        .where(
+            inArray(attendance.studentId, classStudents.map(s => s.id))
+        );
 
-    // 5. Fetch Marks (Overview)
-    // We want to show a marks grid. We need all subjects for this batch/sem and marks for each student.
-    // This can be heavy. Let's start with passing the Student List and let the Client fetch/calculate or we fetch here.
-    // Fetching here is better for SEO/Speed.
+    // 5. Aggregate Attendance by Student & Semester
+    const attendanceData: Record<string, Record<string, { total: number; present: number; absent: number; percentage: number }>> = {};
 
-    // Get all subjects for this batch (and current semester?)
-    // Let's assume we show marks for "Current Semester" of the students.
-    // But students might be in different semesters? No, a batch/class is usually in same sem.
-    // We'll take the semester from the first student or the batch data?
-    // Students table has 'currentSemester'.
+    classStudents.forEach(student => {
+        attendanceData[student.id] = {};
+        const studentRecords = stats.filter(r => r.studentId === student.id);
 
-    const semester = classStudents[0]?.currentSemester || "1-1";
+        // Group by semester
+        studentRecords.forEach(r => {
+            const sem = r.semester;
+            if (!attendanceData[student.id][sem]) {
+                attendanceData[student.id][sem] = { total: 0, present: 0, absent: 0, percentage: 0 };
+            }
+            attendanceData[student.id][sem].total++;
+            if (r.isPresent) attendanceData[student.id][sem].present++;
+        });
 
-    const batchSubjects = await db.query.subjects.findMany({
-        where: and(
-            eq(subjects.batchId, assignment.batchId),
-            eq(subjects.semester, semester)
-        )
+        // Calculate absent & percentage
+        Object.keys(attendanceData[student.id]).forEach(sem => {
+            const d = attendanceData[student.id][sem];
+            d.absent = d.total - d.present;
+            d.percentage = d.total > 0 ? Math.round((d.present / d.total) * 100) : 0;
+        });
     });
 
-    // Fetch marks for these students and subjects
-    // This is a bit complex. We can fetch ALL marks for these students and filter in JS.
-    // Or fetch subject-wise.
-    // Let's fetch all marks for these students for the current semester subjects.
+    // 6. Fetch ALL Subjects for the batch
+    const allSubjects = await db.query.subjects.findMany({
+        where: eq(subjects.batchId, assignment.batchId)
+    });
 
-    // Actually, MyClassClient will likely fetch details or we pass everything.
-    // Let's pass students and subjects. Marks logic can be handled in a separate server action or fetch.
-    // Or simplified: Just pass students and subjects.
-
-    // Let's Fetch marks to pass as initial data.
-    const allMarks = await db.select()
+    // 7. Fetch Marks (All Types)
+    const marksRecords = await db.select({
+        studentId: marks.studentId,
+        subjectId: marks.subjectId,
+        type: marks.type,
+        total: marks.total
+    })
         .from(marks)
         .where(
-            and(
-                // Filter by students in this class
-                // inArray(marks.studentId, classStudents.map(s => s.id)) // might be too many
-                // eq(marks.type, 'semester') // or all types? User wants to see marks.
-            )
+            inArray(marks.studentId, classStudents.map(s => s.id))
         );
-    // We should refine this query later if performance is user.
+
+    // Aggregate Marks by Student & Subject & Type
+    const marksData: Record<string, Record<string, Record<string, number>>> = {};
+
+    classStudents.forEach(student => {
+        marksData[student.id] = {};
+        const studentMarks = marksRecords.filter(m => m.studentId === student.id);
+
+        studentMarks.forEach(m => {
+            if (!marksData[student.id][m.subjectId]) {
+                marksData[student.id][m.subjectId] = {};
+            }
+            marksData[student.id][m.subjectId][m.type] = m.total;
+        });
+    });
 
     return (
         <MyClassClient
             students={classStudents}
             batchName={assignment.batch.name}
             className={assignment.class.name}
-            subjects={batchSubjects}
+            allSubjects={allSubjects}
+            attendanceData={attendanceData}
+            marksData={marksData}
+            canEdit={assignment.canEditStudentData}
+            batchId={assignment.batchId}
+            classId={assignment.classId}
         />
     );
 }

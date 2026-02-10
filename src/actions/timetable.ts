@@ -82,48 +82,68 @@ export async function updateTimetableSlot(
     data: {
         dayOfWeek: string;
         period: number;
-        classId: string;
-        subjectId: string;
-        semester: string; // Needed for schema
-        batchId: string;  // Needed for schema
+        classId?: string;
+        subjectId?: string;
+        semester?: string; // Needed for schema
+        batchId?: string;  // Needed for schema
     }
 ) {
     try {
         // Validation & Type Casting
+        const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+        type DayOfWeek = typeof DAYS[number];
+
         if (!DAYS.includes(data.dayOfWeek as DayOfWeek)) {
             return { success: false, error: "Invalid day" };
         }
         const day = data.dayOfWeek as DayOfWeek;
 
-        // Upsert logic:
-        // Check manually for existing slot
-        const existing = await db.select().from(timetable).where(and(
-            eq(timetable.classId, data.classId),
-            eq(timetable.dayOfWeek, day), // Use typed variable
-            eq(timetable.period, data.period)
-        )).execute();
+        await db.transaction(async (tx) => {
+            // 1. Get faculty assignments to identify which slots belong to them
+            const assignments = await tx.select({
+                subjectId: facultySubjects.subjectId,
+                classId: facultySubjects.classId
+            })
+                .from(facultySubjects)
+                .where(eq(facultySubjects.facultyId, facultyId));
 
-        if (existing.length > 0) {
-            // Update
-            await db.update(timetable)
-                .set({
-                    subjectId: data.subjectId,
-                    batchId: data.batchId,
-                    semester: data.semester
+            // 2. Find and delete existing entry for THIS faculty at THIS day/period
+            if (assignments.length > 0) {
+                const existingEntries = await tx.select({
+                    id: timetable.id,
+                    subjectId: timetable.subjectId,
+                    classId: timetable.classId
                 })
-                .where(eq(timetable.id, existing[0].id));
-        } else {
-            // Insert
-            await db.insert(timetable).values({
-                id: crypto.randomUUID(),
-                dayOfWeek: day, // Use typed variable
-                period: data.period,
-                classId: data.classId,
-                subjectId: data.subjectId,
-                batchId: data.batchId,
-                semester: data.semester,
-            });
-        }
+                    .from(timetable)
+                    .where(and(
+                        eq(timetable.dayOfWeek, day),
+                        eq(timetable.period, data.period)
+                    ));
+
+                // Filter to find entry belonging to this faculty
+                const entryToDelete = existingEntries.find(e =>
+                    assignments.some(a => a.subjectId === e.subjectId && a.classId === e.classId)
+                );
+
+                if (entryToDelete) {
+                    await tx.delete(timetable).where(eq(timetable.id, entryToDelete.id));
+                }
+            }
+
+            // 3. Insert new entry if valid data provided (not clearing to Free)
+            if (data.classId && data.subjectId && data.batchId && data.semester) {
+                await tx.insert(timetable).values({
+                    id: crypto.randomUUID(),
+                    batchId: data.batchId,
+                    classId: data.classId,
+                    semester: data.semester,
+                    dayOfWeek: day,
+                    period: data.period,
+                    subjectId: data.subjectId,
+                });
+            }
+        });
+
 
         revalidatePath("/admin/faculty");
         revalidatePath(`/admin/faculty/${facultyId}`);

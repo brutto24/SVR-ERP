@@ -93,8 +93,7 @@ export default function BatchClassManager({ batchId, classes }: { batchId: strin
                             </div>
                         ) : (
                             <>
-                                <h3 className="font-bold text-lg text-gray-800 mb-1">{cls.name}</h3>
-                                <p className="text-xs text-gray-400 mb-4">Class ID: {cls.id}</p>
+                                <h3 className="font-bold text-lg text-gray-800 mb-4">{cls.name}</h3>
 
                                 <button
                                     onClick={() => router.push(`/admin/batches/${batchId}/classes/${cls.id}`)}

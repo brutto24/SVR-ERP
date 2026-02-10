@@ -17,6 +17,7 @@ export default async function FacultyPage() {
         // Class Teacher Details
         assignedBatchId: classTeachers.batchId,
         assignedClassId: classTeachers.classId,
+        canEditStudentData: classTeachers.canEditStudentData,
     })
         .from(faculty)
         .innerJoin(users, eq(faculty.userId, users.id))
@@ -27,7 +28,7 @@ export default async function FacultyPage() {
         .from(academicBatches)
         .where(eq(academicBatches.isActive, true));
 
-    const classesList = await db.select({ id: classes.id, name: classes.name }).from(classes);
+    const classesList = await db.select({ id: classes.id, name: classes.name, batchId: classes.batchId }).from(classes);
 
     return (
         <div className="space-y-6">

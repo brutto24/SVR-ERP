@@ -27,7 +27,13 @@ export default function BatchManager({ batches }: { batches: Batch[] }) {
     const [editForm, setEditForm] = useState<{ name: string; isActive: boolean }>({ name: "", isActive: true });
 
     // Delete Modal State
-    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; batchId: string; name: string }>({ isOpen: false, batchId: "", name: "" });
+    const [deleteModal, setDeleteModal] = useState<{
+        isOpen: boolean;
+        batchId: string;
+        name: string;
+        warning?: string;
+        requiresCheckbox?: boolean;
+    }>({ isOpen: false, batchId: "", name: "" });
     const [isDeleting, setIsDeleting] = useState(false);
 
     // For local confirmation before valid server action
@@ -50,15 +56,24 @@ export default function BatchManager({ batches }: { batches: Batch[] }) {
 
     const confirmDelete = async () => {
         setIsDeleting(true);
-        const res = await deleteBatch(deleteModal.batchId);
-        setIsDeleting(false);
-        setDeleteModal({ ...deleteModal, isOpen: false });
+        // First try standard delete (forces check on server)
+        const res = await deleteBatch(deleteModal.batchId, !!deleteModal.requiresCheckbox); // if requiresCheckbox is set, it means we are in "Force Mode" (user checked the box)
 
         if (res.success) {
             toast.success("Batch deleted successfully");
+            setDeleteModal({ ...deleteModal, isOpen: false, warning: undefined, requiresCheckbox: false });
+        } else if (res.requiresConfirmation) {
+            // Show warning modal
+            setDeleteModal({
+                ...deleteModal,
+                warning: res.error,
+                requiresCheckbox: true
+            });
         } else {
             toast.error(res.error || "Failed to delete batch");
+            setDeleteModal({ ...deleteModal, isOpen: false });
         }
+        setIsDeleting(false);
     };
 
     return (
@@ -92,7 +107,6 @@ export default function BatchManager({ batches }: { batches: Batch[] }) {
                             </div>
                             <div className="flex flex-col gap-3 mb-4">
                                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                                    <Calendar size={16} />
                                     <span>
                                         {new Date(batch.startDate).getFullYear()} - {new Date(batch.endDate).getFullYear()}
                                     </span>
@@ -135,12 +149,14 @@ export default function BatchManager({ batches }: { batches: Batch[] }) {
 
             <DeleteConfirmationModal
                 isOpen={deleteModal.isOpen}
-                onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+                onClose={() => setDeleteModal({ ...deleteModal, isOpen: false, warning: undefined, requiresCheckbox: false })}
                 onConfirm={confirmDelete}
                 title="Delete Batch?"
                 message="Are you sure you want to delete"
                 itemName={deleteModal.name}
                 isDeleting={isDeleting}
+                warningContent={deleteModal.warning}
+                checkboxLabel={deleteModal.requiresCheckbox ? "I understand the consequences and want to delete this batch anyway." : undefined}
             />
         </div >
     );

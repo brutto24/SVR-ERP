@@ -15,10 +15,11 @@ type Faculty = {
     isActive: boolean;
     assignedBatchId: string | null;
     assignedClassId: string | null;
+    canEditStudentData: boolean | null;
 };
 
 type Batch = { id: string; name: string };
-type Class = { id: string; name: string };
+type Class = { id: string; name: string; batchId: string };
 
 export default function FacultyManager({
     facultyList,
@@ -228,7 +229,9 @@ export default function FacultyManager({
                                                                 onChange={(e) => setEditForm({ ...editForm, assignedClassId: e.target.value })}
                                                             >
                                                                 <option value="">Select Class</option>
-                                                                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                                                {classes
+                                                                    .filter(c => c.batchId === editForm.assignedBatchId)
+                                                                    .map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                                             </select>
                                                         </div>
                                                     )}
@@ -260,13 +263,30 @@ export default function FacultyManager({
                                             <td className="px-6 py-4">
                                                 <div className="text-sm">
                                                     {fac.assignedBatchId ? (
-                                                        <div className="space-y-1">
+                                                        <div className="space-y-2">
                                                             <div className="flex items-center gap-1.5 text-indigo-700 font-medium">
                                                                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                                                                 Class Teacher
                                                             </div>
                                                             <div className="text-xs text-gray-500 pl-3">
                                                                 {batches.find(b => b.id === fac.assignedBatchId)?.name} • {classes.find(c => c.id === fac.assignedClassId)?.name}
+                                                            </div>
+                                                            {/* Permission Toggle */}
+                                                            <div className="pl-3 pt-1">
+                                                                <label className="relative inline-flex items-center cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="sr-only peer"
+                                                                        checked={!!fac.canEditStudentData}
+                                                                        onChange={async (e) => {
+                                                                            const { toggleClassTeacherPermission } = await import("@/actions/admin");
+                                                                            await toggleClassTeacherPermission(fac.id, e.target.checked);
+                                                                            router.refresh();
+                                                                        }}
+                                                                    />
+                                                                    <div className="w-8 h-4 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[0px] after:left-[0px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                                    <span className="ml-2 text-xs font-medium text-gray-600">Allow Editing</span>
+                                                                </label>
                                                             </div>
                                                         </div>
                                                     ) : (
@@ -331,141 +351,147 @@ export default function FacultyManager({
                             )}
                         </tbody>
                     </table>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Delete Modal */}
-            {deletingId && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex flex-col items-center text-center">
-                            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                                <AlertTriangle className="w-6 h-6 text-red-600" />
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Faculty?</h3>
-
-                            {deletionWarning ? (
-                                <div className="space-y-4 mb-6">
-                                    <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
-                                        {deletionWarning}
-                                    </p>
-
-                                    <div className="flex items-start gap-3 text-left bg-gray-50 p-3 rounded-lg">
-                                        <input
-                                            type="checkbox"
-                                            id="confirm-force"
-                                            checked={forceCheckbox}
-                                            onChange={(e) => setForceCheckbox(e.target.checked)}
-                                            className="mt-1 w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
-                                        />
-                                        <label htmlFor="confirm-force" className="text-sm text-gray-700 cursor-pointer select-none">
-                                            I understand the consequences and want to delete this faculty member anyway.
-                                        </label>
-                                    </div>
+            {
+                deletingId && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex flex-col items-center text-center">
+                                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                                    <AlertTriangle className="w-6 h-6 text-red-600" />
                                 </div>
-                            ) : (
-                                <p className="text-sm text-gray-500 mb-6">
-                                    Are you sure you want to delete this faculty member?
-                                    <br /><br />
-                                    <span className="font-semibold text-gray-700">Suggestion:</span> Consider deactivating them instead to preserve their historical data.
-                                    <br /><br />
-                                    Deleting is permanent and cannot be undone.
-                                </p>
-                            )}
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Faculty?</h3>
 
-                            <div className="flex gap-3 w-full">
-                                <button
-                                    onClick={() => {
-                                        setDeletingId(null);
-                                        setDeletionWarning(null);
-                                        setForceCheckbox(false);
-                                    }}
-                                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDelete}
-                                    disabled={!!deletionWarning && !forceCheckbox}
-                                    className={`flex-1 px-4 py-2 rounded-xl font-medium transition-colors shadow-lg ${deletionWarning && !forceCheckbox
-                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                                        : "bg-red-600 text-white hover:bg-red-700 shadow-red-500/30"
-                                        }`}
-                                >
-                                    {deletionWarning ? "Confirm Delete" : "Delete"}
-                                </button>
+                                {deletionWarning ? (
+                                    <div className="space-y-4 mb-6">
+                                        <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
+                                            {deletionWarning}
+                                        </p>
+
+                                        <div className="flex items-start gap-3 text-left bg-gray-50 p-3 rounded-lg">
+                                            <input
+                                                type="checkbox"
+                                                id="confirm-force"
+                                                checked={forceCheckbox}
+                                                onChange={(e) => setForceCheckbox(e.target.checked)}
+                                                className="mt-1 w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                                            />
+                                            <label htmlFor="confirm-force" className="text-sm text-gray-700 cursor-pointer select-none">
+                                                I understand the consequences and want to delete this faculty member anyway.
+                                            </label>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-500 mb-6">
+                                        Are you sure you want to delete this faculty member?
+                                        <br /><br />
+                                        <span className="font-semibold text-gray-700">Suggestion:</span> Consider deactivating them instead to preserve their historical data.
+                                        <br /><br />
+                                        Deleting is permanent and cannot be undone.
+                                    </p>
+                                )}
+
+                                <div className="flex gap-3 w-full">
+                                    <button
+                                        onClick={() => {
+                                            setDeletingId(null);
+                                            setDeletionWarning(null);
+                                            setForceCheckbox(false);
+                                        }}
+                                        className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDelete}
+                                        disabled={!!deletionWarning && !forceCheckbox}
+                                        className={`flex-1 px-4 py-2 rounded-xl font-medium transition-colors shadow-lg ${deletionWarning && !forceCheckbox
+                                            ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+                                            : "bg-red-600 text-white hover:bg-red-700 shadow-red-500/30"
+                                            }`}
+                                    >
+                                        {deletionWarning ? "Confirm Delete" : "Delete"}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Toggle Status Modal */}
-            {toggleStatusData && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex flex-col items-center text-center">
-                            <div className={`w-12 h-12 ${toggleStatusData.currentStatus ? 'bg-amber-100' : 'bg-green-100'} rounded-full flex items-center justify-center mb-4`}>
-                                <Power className={`w-6 h-6 ${toggleStatusData.currentStatus ? 'text-amber-600' : 'text-green-600'}`} />
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">
-                                {toggleStatusData.currentStatus ? 'Deactivate' : 'Activate'} Faculty?
-                            </h3>
-                            <p className="text-sm text-gray-500 mb-6">
-                                {toggleStatusData.currentStatus
-                                    ? `Are you sure you want to deactivate ${toggleStatusData.name}? They will not be able to log in until reactivated.`
-                                    : `Are you sure you want to activate ${toggleStatusData.name}? They will be able to log in again.`
-                                }
-                            </p>
-                            <div className="flex gap-3 w-full">
-                                <button
-                                    onClick={() => setToggleStatusData(null)}
-                                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmToggleStatus}
-                                    className={`flex-1 px-4 py-2 ${toggleStatusData.currentStatus ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-green-600 hover:bg-green-700 shadow-green-500/30'} text-white rounded-xl font-medium transition-colors shadow-lg`}
-                                >
-                                    {toggleStatusData.currentStatus ? 'Deactivate' : 'Activate'}
-                                </button>
+            {
+                toggleStatusData && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex flex-col items-center text-center">
+                                <div className={`w-12 h-12 ${toggleStatusData.currentStatus ? 'bg-amber-100' : 'bg-green-100'} rounded-full flex items-center justify-center mb-4`}>
+                                    <Power className={`w-6 h-6 ${toggleStatusData.currentStatus ? 'text-amber-600' : 'text-green-600'}`} />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                                    {toggleStatusData.currentStatus ? 'Deactivate' : 'Activate'} Faculty?
+                                </h3>
+                                <p className="text-sm text-gray-500 mb-6">
+                                    {toggleStatusData.currentStatus
+                                        ? `Are you sure you want to deactivate ${toggleStatusData.name}? They will not be able to log in until reactivated.`
+                                        : `Are you sure you want to activate ${toggleStatusData.name}? They will be able to log in again.`
+                                    }
+                                </p>
+                                <div className="flex gap-3 w-full">
+                                    <button
+                                        onClick={() => setToggleStatusData(null)}
+                                        className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmToggleStatus}
+                                        className={`flex-1 px-4 py-2 ${toggleStatusData.currentStatus ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-green-600 hover:bg-green-700 shadow-green-500/30'} text-white rounded-xl font-medium transition-colors shadow-lg`}
+                                    >
+                                        {toggleStatusData.currentStatus ? 'Deactivate' : 'Activate'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Reset Password Modal */}
-            {resettingId && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex flex-col items-center text-center">
-                            <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4">
-                                <Lock className="w-6 h-6 text-amber-600" />
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">Reset Password?</h3>
-                            <p className="text-sm text-gray-500 mb-6">
-                                This will reset the faculty's password to their Employee ID. They will be forced to change it on next login.
-                            </p>
-                            <div className="flex gap-3 w-full">
-                                <button
-                                    onClick={() => setResettingId(null)}
-                                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmReset}
-                                    className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/30"
-                                >
-                                    Reset Password
-                                </button>
+            {
+                resettingId && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex flex-col items-center text-center">
+                                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                                    <Lock className="w-6 h-6 text-amber-600" />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">Reset Password?</h3>
+                                <p className="text-sm text-gray-500 mb-6">
+                                    This will reset the faculty's password to their Employee ID. They will be forced to change it on next login.
+                                </p>
+                                <div className="flex gap-3 w-full">
+                                    <button
+                                        onClick={() => setResettingId(null)}
+                                        className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmReset}
+                                        className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/30"
+                                    >
+                                        Reset Password
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </>
     );
 }

@@ -66,34 +66,37 @@ export default function FacultyTimetable({
     };
 
     const handleSave = async () => {
-        if (!isEditing || !editClassId || !editSubjectId) return;
+        if (!isEditing) return;
 
         setLoading(true);
 
-        // Find meta for batch/semester
-        const meta = assignments.find(a => a.subjectId === editSubjectId && a.classId === editClassId);
+        // If classId and subjectId are empty strings, it means "Leisure" (Clear slot)
+        // We don't need metadata for batch/semester in this case
+        let meta: AssignedMeta | undefined;
 
-        if (!meta) {
-            alert("Invalid assignment combination.");
-            setLoading(false);
-            return;
+        if (editClassId && editSubjectId) {
+            // Find meta for batch/semester only if we are assigning something
+            meta = assignments.find(a => a.subjectId === editSubjectId && a.classId === editClassId);
+
+            if (!meta) {
+                alert("Invalid assignment combination.");
+                setLoading(false);
+                return;
+            }
         }
 
         const res = await updateTimetableSlot(facultyId, {
             dayOfWeek: selectedDay,
             period: isEditing.period,
-            classId: editClassId,
-            subjectId: editSubjectId,
-            batchId: meta.batchId,
-            semester: meta.semester || "1-1" // Fallback if missing
+            classId: editClassId || undefined,
+            subjectId: editSubjectId || undefined,
+            batchId: meta?.batchId || undefined,
+            semester: meta?.semester || undefined
         });
 
         if (res.success) {
-            // Optimistic update or refresh
-            router.refresh(); // Refresh simpler for sync
+            router.refresh();
             setIsEditing(null);
-            // We should ideally update local state too if we want instant feedback without waiting query
-            // But router.refresh is safest
         } else {
             alert("Failed to update: " + res.error);
         }
@@ -185,20 +188,26 @@ export default function FacultyTimetable({
                                 <select
                                     className="w-full p-2 border rounded-lg"
                                     onChange={(e) => {
-                                        const [sId, cId] = e.target.value.split("|");
-                                        setEditSubjectId(sId);
-                                        setEditClassId(cId);
+                                        const val = e.target.value;
+                                        if (val === "FREE") {
+                                            setEditSubjectId("");
+                                            setEditClassId("");
+                                        } else {
+                                            const [sId, cId] = val.split("|");
+                                            setEditSubjectId(sId);
+                                            setEditClassId(cId);
+                                        }
                                     }}
-                                    value={editClassId && editSubjectId ? `${editSubjectId}|${editClassId}` : ""}
+                                    value={editClassId && editSubjectId ? `${editSubjectId}|${editClassId}` : "FREE"}
                                 >
-                                    <option value="">Select Class & Subject...</option>
+                                    <option value="FREE">Leisure / Free Period</option>
                                     {assignments.map((a, idx) => (
                                         <option key={idx} value={`${a.subjectId}|${a.classId}`}>
                                             {a.className} - {a.subjectName}
                                         </option>
                                     ))}
                                 </select>
-                                <p className="text-xs text-gray-500 mt-1">Only assigned subjects are shown.</p>
+                                <p className="text-xs text-gray-500 mt-1">Select "Leisure" to clear the slot.</p>
                             </div>
 
                             <div className="flex gap-3 justify-end pt-4">
@@ -210,7 +219,7 @@ export default function FacultyTimetable({
                                 </button>
                                 <button
                                     onClick={handleSave}
-                                    disabled={loading || !editClassId}
+                                    disabled={loading}
                                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                                 >
                                     {loading ? "Saving..." : "Save Schedule"}
